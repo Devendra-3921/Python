@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>URL VAPT Simulator — Enhanced</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #071017;
+      --panel: #0f1a23;
+      --accent: #00d47a;
+      --accent2: #00aaff;
+      --muted: #9aa7b0;
+      --high: #ff6b6b;
+      --med: #ffb86b;
+      --low: #7ef0b5;
+      --light-bg: #f6f8fb;
+      --light-panel: #ffffff;
+      --light-text: #111;
+      --radius: 10px;
+    }
+    html, body {
+      height: 100%;
+      margin: 0; padding: 0;
+      font-family: Inter, Arial, sans-serif;
+      background: var(--bg);
+      color: #e6eef2;
+    }
+    header {
+      background: linear-gradient(90deg, #062126, #0b2730);
+      padding: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    header .title {
+      color: var(--accent);
+      font-size: 1.4rem;
+      margin: 0;
+    }
+    .container-main {
+      max-width: 1200px;
+      margin: 18px auto;
+      padding: 12px;
+    }
+    .card-panel {
+      background: linear-gradient(180deg, var(--panel), #07151a);
+      border-radius: var(--radius);
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.03);
+      margin-bottom: 12px;
+    }
+    .btn-accent {
+      background: var(--accent);
+      color: #062224;
+      border: 0;
+      transition: all .18s;
+    }
+    .btn-accent:hover {
+      background: var(--accent2);
+      color: #fff;
+    }
+    input, textarea, select {
+      border-radius: 8px;
+      transition: box-shadow .12s;
+    }
+    input:focus, textarea:focus, select:focus {
+      box-shadow: 0 0 8px rgba(0,212,122,0.12);
+      outline: none;
+      border-color: var(--accent);
+    }
+    table thead th {
+      background: #071e26;
+      color: var(--accent);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    table tbody tr:hover {
+      background: rgba(0,255,120,0.08);
+      cursor: pointer;
+    }
+    .badge-high { background: var(--high); color: #fff; }
+    .badge-med { background: var(--med); color: #111; }
+    .badge-low { background: var(--low); color: #062224; }
+    .nowrap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .muted-small { font-size: 0.85rem; color: var(--muted); }
+    .controls-row { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+    .search-input { min-width: 220px; max-width: 420px; }
+    .chip { display: inline-block; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.03); color: var(--muted); margin: 4px; font-size: 0.85rem; }
+    .kicker { font-size: 0.95rem; color: var(--muted); margin-bottom: 6px; }
+    .chart-box { height: 220px; position: relative; }
+    .icon-btn { padding: 6px 8px; border-radius: 8px; }
+    body.light-mode {
+      background: var(--light-bg);
+      color: var(--light-text);
+    }
+    body.light-mode .card-panel {
+      background: var(--light-panel);
+      color: var(--light-text);
+    }
+    body.light-mode header {
+      background: linear-gradient(90deg, #e9f1ff, #eef8ff);
+    }
+    body.light-mode .btn-accent {
+      background: var(--light-panel);
+      color: var(--light-text);
+    }
+    @media(max-width: 900px) {
+      .controls-row { flex-direction: column; align-items: stretch; }
+      .col-actions { min-width: 80px; }
+      .table-wrap { overflow: auto; }
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px 0;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="container-main d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="title">URL VAPT Simulator — Enhanced</h1>
+      <div class="muted-small">Fresh features & stability improvements</div>
+    </div>
+    <div class="d-flex align-items-center" style="gap: 8px;">
+      <button id="themeToggle" class="btn btn-outline-light btn-sm">Toggle Theme</button>
+      <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#ethicsModal">Ethics</button>
+    </div>
+  </div>
+</header>
+
+<div class="container-main">
+
+  <!-- Controls -->
+  <section class="card-panel" aria-labelledby="controls-label">
+    <h2 id="controls-label" class="kicker">Scan Controls</h2>
+    <div class="controls-row">
+      <textarea id="urlInput" rows="3" class="form-control" placeholder="Enter URLs (comma / newline)"></textarea>
+      <select id="scenario" class="form-select" style="max-width: 200px;">
+        <option value="">Scenario Bias</option>
+        <option>SQLi heavy</option>
+        <option>XSS heavy</option>
+        <option>SSRF focused</option>
+        <option>Dir Traversal focused</option>
+        <option>RCE heavy</option>
+      </select>
+      <div class="d-flex gap-2 flex-wrap">
+        <button id="scanBtn" class="btn btn-accent">Start Scan</button>
+        <button id="prefillBtn" class="btn btn-light">Prefill Demo</button>
+        <button id="clearBtn" class="btn btn-outline-light">Clear Data</button>
+        <div class="btn-group">
+          <button id="exportCSV" class="btn btn-outline-light">Export CSV</button>
+          <button id="exportPDF" class="btn btn-outline-light">Export PDF</button>
+        </div>
+        <label class="btn btn-outline-light mb-0">Import CSV <input id="importFile" type="file" accept=".csv" hidden></label>
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-2" style="flex-wrap: wrap; align-items: center;">
+      <div class="help">Tip: Separate with commas or newlines. <kbd>Ctrl/Cmd + Enter</kbd> to scan.</div>
+      <div class="ms-auto"><span id="statsChip" class="chip">Total: 0 • High: 0 • Med: 0 • Low: 0</span></div>
+    </div>
+  </section>
+
+  <!-- Filters / Search -->
+  <section class="card-panel">
+    <h3 class="kicker">Filters & Search</h3>
+    <div class="d-flex gap-2 align-items-center" style="flex-wrap: wrap;">
+      <select id="filterRisk" class="form-select form-select-sm" style="max-width: 150px;">
+        <option value="">All Risks</option><option>High</option><option>Medium</option><option>Low</option>
+      </select>
+      <select id="filterVuln" class="form-select form-select-sm" style="max-width: 180px;">
+        <option value="">All Attack Types</option>
+      </select>
+      <input id="search" class="form-control form-control-sm search-input" placeholder="Search URL / note">
+      <button id="resetFilters" class="btn btn-outline-light btn-sm">Reset</button>
+      <div class="ms-auto help">Click on charts to filter</div>
+    </div>
+  </section>
+
+  <!-- Results & Charts -->
+  <section class="card-panel">
+    <h3 class="kicker">Results & Visuals</h3>
+    <div class="row gy-3">
+      <div class="col-12 col-lg-7">
+        <div class="card-panel p-2">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Scan Results</strong>
+            <div class="muted-small">Click headers to sort • row actions</div>
+          </div>
+          <div class="table-wrap" style="max-height:400px; overflow:auto;">
+            <table id="resultsTable" class="table table-sm table-dark align-middle mb-0">
+              <thead>
+                <tr>
+                  <th data-key="idx" class="nowrap">#</th>
+                  <th data-key="url">URL</th>
+                  <th data-key="vuln">Attack Type</th>
+                  <th data-key="risk">Risk</th>
+                  <th data-key="timestamp" class="muted-small">When</th>
+                  <th class="col-actions">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <div id="emptyState" class="empty-state hidden">No scan data yet.</div>
+          </div>
+        </div>
+        <div class="d-flex gap-2 mt-2">
+          <button id="selectAll" class="btn btn-outline-light btn-sm">Select All</button>
+          <button id="deselectAll" class "btn btn-outline-light btn-sm">Deselect</button>
+          <button id="bulkDelete" class="btn btn-danger btn-sm">Delete Selected</button>
+          <div class="muted-small ms-auto">Selected <span id="selCount">0</span></div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-5">
+        <div class="card-panel chart-box mb-3">
+          <strong>Risk Distribution</strong>
+          <canvas id="riskChart" style="width:100%;height:100%"></canvas>
+        </div>
+        <div class="card-panel chart-box">
+          <strong>Attack Types</strong>
+          <canvas id="typeChart" style="width:100%;height:100%"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="mt-4 card-panel chart-box">
+      <strong>Historical Trends (by scan batch)</strong>
+      <canvas id="historyChart" style="width:100%;height:100%"></canvas>
+    </div>
+  </section>
+
+  <section class="card-panel muted-small">
+    <div><strong>Note:</strong> This is a simulated tool for educational/demonstration. Use responsibly.</div>
+  </section>
+</div>
+
+<!-- Ethics Modal -->
+<div class="modal fade" id="ethicsModal" tabindex="-1" aria-labelledby="ethicsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h5 id="ethicsLabel">Ethics & Responsible Use</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p>This tool is for learning only. Do not scan or attack real systems without explicit authorization.</p>
+        <ul>
+          <li>Run scans only in lab/test environments.</li>
+          <li>Obtain written permission before testing production.</li>
+        </ul>
+      </div>
+      <div class="modal-footer"><button class="btn btn-accent" data-bs-dismiss="modal">Understood</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ===============================
+// State & Refs
+// ===============================
+const E = {
+  urlInput: document.getElementById('urlInput'),
+  scenario: document.getElementById('scenario'),
+  scanBtn: document.getElementById('scanBtn'),
+  prefillBtn: document.getElementById('prefillBtn'),
+  clearBtn: document.getElementById('clearBtn'),
+  importFile: document.getElementById('importFile'),
+  exportCSV: document.getElementById('exportCSV'),
+  exportPDF: document.getElementById('exportPDF'),
+  filterRisk: document.getElementById('filterRisk'),
+  filterVuln: document.getElementById('filterVuln'),
+  search: document.getElementById('search'),
+  resetFilters: document.getElementById('resetFilters'),
+  resultsTableBody: document.querySelector('#resultsTable tbody'),
+  statsChip: document.getElementById('statsChip'),
+  selCount: document.getElementById('selCount'),
+  selectAll: document.getElementById('selectAll'),
+  deselectAll: document.getElementById('deselectAll'),
+  bulkDelete: document.getElementById('bulkDelete'),
+  themeToggle: document.getElementById('themeToggle'),
+  emptyState: document.getElementById('emptyState'),
+  historyCanvas: document.getElementById('historyChart')
+};
+
+const ctxRisk = document.getElementById('riskChart').getContext('2d');
+const ctxType = document.getElementById('typeChart').getContext('2d');
+const ctxHist = E.historyCanvas.getContext('2d');
+
+let DATA = [];  // { id, url, vuln, score, risk, timestamp, note, selected, batchId }
+let BATCHES = [];  // for historical chart: each batch has { batchId, timestamp, counts: { risk / vuln distribution } }
+let FILTERED = [];
+let SORT = { key: 'timestamp', dir: 'desc' };
+let RISK_CHART = null, TYPE_CHART = null, HISTORY_CHART = null;
+
+const LS_KEY = 'url_vapt_enh_data';
+const LS_THEME = 'url_vapt_enh_theme';
+
+// Utility
+function uid(pref='id') {
+  return pref + '_' + Math.random().toString(36).slice(2,9);
+}
+function nowISO() {
+  return new Date().toISOString();
+}
+function fmtDate(iso) {
+  try { return new Date(iso).toLocaleString(); } catch(e) { return iso; }
+}
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[c]));
+}
+function saveData() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({ DATA, BATCHES }));
+  } catch(e) {
+    console.warn('save error', e);
+  }
+}
+function loadData() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const obj = JSON.parse(raw);
+      if (obj.DATA) DATA = obj.DATA;
+      if (obj.BATCHES) BATCHES = obj.BATCHES;
+    }
+  } catch(e) {
+    console.warn('load error', e);
+    DATA = []; BATCHES = [];
+  }
+}
+
+// Theme
+function applyTheme() {
+  const t = localStorage.getItem(LS_THEME) || 'dark';
+  if (t === 'light') document.body.classList.add('light-mode');
+  else document.body.classList.remove('light-mode');
+}
+applyTheme();
+E.themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('light-mode');
+  localStorage.setItem(LS_THEME, document.body.classList.contains('light-mode') ? 'light' : 'dark');
+});
+
+// Detection engine (extended)
+function detectVulnAndScore(url, scenario = '') {
+  if (!url || typeof url !== 'string') {
+    return { vuln: 'Unknown', score: 0, risk: 'Low' };
+  }
+  const u = url.toLowerCase();
+  const scores = {
+    'SQL Injection':0, 'XSS':0, 'SSRF':0, 'Directory Traversal':0,
+    'RCE':0, 'LFI':0, 'RFI':0, 'Open Redirect':0,
+    'Command Injection':0, 'IDOR':0, 'XXE':0, 'LDAP Injection':0,
+    'Template Injection':0, 'Host Header Injection':0,
+    'HPP':0, 'CRLF Injection':0, 'CSRF':0, 'Unknown':0
+  };
+  // basic patterns
+  if (/select|union|insert|update|delete|drop/i.test(u)) scores['SQL Injection'] += 3;
+  if (/<script|onerror|javascript:/i.test(u)) scores['XSS'] += 3;
+  if (/127\.0\.0\.1|localhost|file:\/\//i.test(u)) scores['SSRF'] += 3;
+  if (/(\.\.\/)|(%2e%2e\/)/i.test(u)) scores['Directory Traversal'] += 3;
+  if (/eval\(|system\(/i.test(u)) scores['RCE'] += 2;
+  // more patterns can be added...
+
+  // scenario biases
+  const scenarioBias = {
+    'SQLi heavy': {'SQL Injection':2},
+    'XSS heavy': {'XSS':2},
+    'SSRF focused': {'SSRF':2},
+    'Dir Traversal focused': {'Directory Traversal':2},
+    'RCE heavy': {'RCE':2}
+  };
+  if (scenario && scenarioBias[scenario]) {
+    for (const k in scenarioBias[scenario]) {
+      scores[k] += scenarioBias[scenario][k];
+    }
+  }
+
+  const entries = Object.entries(scores).sort((a,b) => b[1] - a[1]);
+  let top = entries[0];
+  if (top[1] === 0) {
+    const f = entries.find(e => e[1] > 0);
+    if (f) top = f;
+  }
+  let vulnName = top[0], score = top[1];
+  if (score === 0) vulnName = 'Unknown';
+  let risk = 'Low';
+  if (score >= 6) risk = 'High';
+  else if (score >= 3) risk = 'Medium';
+  return { vuln: vulnName, score, risk };
+}
+
+// Add entries from input
+function addUrlsFromInput(inputText, scenarioBias = '') {
+  if (!inputText) return [];
+  const list = inputText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+  const added = [];
+  const batchId = uid('batch');
+  const batchTimestamp = nowISO();
+  const batchCounts = {};  // track counts this batch
+  list.forEach(url => {
+    if (DATA.find(d => d.url.toLowerCase() === url.toLowerCase())) return;
+    const d = detectVulnAndScore(url, scenarioBias);
+    const rec = {
+      id: uid('e'),
+      url,
+      vuln: d.vuln,
+      score: d.score,
+      risk: d.risk,
+      timestamp: batchTimestamp,
+      note: '',
+      selected: false,
+      batchId
+    };
+    DATA.push(rec);
+    added.push(rec);
+    batchCounts[d.risk] = (batchCounts[d.risk] || 0) + 1;
+  });
+  if (added.length) {
+    BATCHES.push({ batchId, timestamp: batchTimestamp, counts: batchCounts });
+    saveData();
+  }
+  return added;
+}
+
+// Render table
+function renderTable() {
+  const rf = E.filterRisk.value;
+  const vf = E.filterVuln.value;
+  const q = (E.search.value || '').toLowerCase().trim();
+  FILTERED = DATA.filter(d => {
+    if (rf && d.risk !== rf) return false;
+    if (vf && d.vuln !== vf) return false;
+    if (q) {
+      return (d.url && d.url.toLowerCase().includes(q)) ||
+             (d.note && d.note.toLowerCase().includes(q));
+    }
+    return true;
+  });
+
+  const key = SORT.key;
+  const dir = SORT.dir === 'asc' ? 1 : -1;
+  FILTERED.sort((a,b) => {
+    let va = a[key] || '', vb = b[key] || '';
+    if (key === 'timestamp') {
+      va = a.timestamp; vb = b.timestamp;
+    }
+    if (key === 'idx') {
+      return dir * (DATA.indexOf(a) - DATA.indexOf(b));
+    }
+    return dir * String(va).localeCompare(String(vb));
+  });
+
+  E.resultsTableBody.innerHTML = '';
+  if (FILTERED.length === 0) {
+    E.emptyState.classList.remove('hidden');
+  } else {
+    E.emptyState.classList.add('hidden');
+  }
+  FILTERED.forEach((d, i) => {
+    const tr = document.createElement('tr');
+    tr.dataset.id = d.id;
+    const when = fmtDate(d.timestamp);
+    tr.innerHTML = `
+      <td class="nowrap text-muted small">${i+1}</td>
+      <td style="min-width:220px;max-width:520px;"><div class="nowrap" title="${escapeHtml(d.url)}">${escapeHtml(d.url)}</div></td>
+      <td class="nowrap">${escapeHtml(d.vuln)}</td>
+      <td class="nowrap"><span class="${d.risk==='High'?'badge-high':d.risk==='Medium'?'badge-med':'badge-low'}" style="padding:6px 8px;border-radius:6px;">${escapeHtml(d.risk)}</span></td>
+      <td class="muted-small nowrap">${escapeHtml(when)}</td>
+      <td>
+        <div class="d-flex gap-1 align-items-center">
+          <input type="checkbox" class="select-row" data-id="${d.id}" ${d.selected?'checked':''} title="Select row">
+          <button class="btn btn-sm btn-outline-light icon-btn" data-action="rescan" data-id="${d.id}" title="Rescan">🔄</button>
+          <button class="btn btn-sm btn-outline-light icon-btn" data-action="note" data-id="${d.id}" title="Note">📝</button>
+          <button class="btn btn-sm btn-danger icon-btn" data-action="delete" data-id="${d.id}" title="Delete">🗑️</button>
+        </div>
+      </td>
+    `;
+    E.resultsTableBody.appendChild(tr);
+  });
+
+  updateStatsUI();
+  updateCharts();
+  populateVulnFilterIfNeeded();
+  updateSelectCount();
+}
+
+// Update stats
+function updateStatsUI() {
+  const total = DATA.length;
+  const high = DATA.filter(d => d.risk === 'High').length;
+  const med = DATA.filter(d => d.risk === 'Medium').length;
+  const low = DATA.filter(d => d.risk === 'Low').length;
+  E.statsChip.textContent = `Total: ${total} • High: ${high} • Med: ${med} • Low: ${low}`;
+}
+
+// Charts
+function updateCharts() {
+  // Risk chart
+  const riskCounts = { High:0, Medium:0, Low:0 };
+  const typeCounts = {};
+  DATA.forEach(d => {
+    riskCounts[d.risk] = (riskCounts[d.risk]||0) + 1;
+    typeCounts[d.vuln] = (typeCounts[d.vuln]||0) + 1;
+  });
+
+  if (RISK_CHART) RISK_CHART.destroy();
+  RISK_CHART = new Chart(ctxRisk, {
+    type: 'doughnut',
+    data: {
+      labels: ['High','Medium','Low'],
+      datasets: [{ data: [riskCounts.High, riskCounts.Medium, riskCounts.Low],
+                   backgroundColor: ['#ff6b6b','#ffb86b','#7ef0b5'] }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      onClick: (e, items) => {
+        if (items.length) {
+          const lab = RISK_CHART.data.labels[items[0].index];
+          E.filterRisk.value = lab;
+          renderTable();
+        }
+      }
+    }
+  });
+
+  const labels = Object.keys(typeCounts).filter(k => typeCounts[k] > 0);
+  const values = labels.map(l => typeCounts[l]);
+  if (TYPE_CHART) TYPE_CHART.destroy();
+  TYPE_CHART = new Chart(ctxType, {
+    type: 'bar',
+    data: { labels, datasets: [{ label:'Occurrences', data: values, backgroundColor:'#00d47a' }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      onClick: (e, items) => {
+        if (items.length) {
+          const idx = items[0].index;
+          E.filterVuln.value = labels[idx];
+          renderTable();
+        }
+      },
+      scales: { y: { beginAtZero:true, precision:0 } }
+    }
+  });
+
+  // History chart
+  const batchLabels = BATCHES.map(b => fmtDate(b.timestamp));
+  const batchHigh = BATCHES.map(b => b.counts.High || 0);
+  const batchMed = BATCHES.map(b => b.counts.Medium || 0);
+  const batchLow = BATCHES.map(b => b.counts.Low || 0);
+
+  if (HISTORY_CHART) HISTORY_CHART.destroy();
+  HISTORY_CHART = new Chart(ctxHist, {
+    type: 'line',
+    data: {
+      labels: batchLabels,
+      datasets: [
+        { label: 'High', data: batchHigh, borderColor:'#ff6b6b', fill:false },
+        { label: 'Medium', data: batchMed, borderColor:'#ffb86b', fill:false },
+        { label: 'Low', data: batchLow, borderColor:'#7ef0b5', fill:false }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { beginAtZero:true, precision:0 } }
+    }
+  });
+}
+
+// Populate vuln filter
+let vulnFilterCache = '';
+function populateVulnFilterIfNeeded() {
+  const s = new Set(DATA.map(d => d.vuln).filter(Boolean));
+  const key = Array.from(s).sort().join('|');
+  if (key === vulnFilterCache) return;
+  vulnFilterCache = key;
+  const opts = ['<option value="">All Attack Types</option>'];
+  Array.from(s).sort().forEach(v => opts.push(`<option>${escapeHtml(v)}</option>`));
+  E.filterVuln.innerHTML = opts.join('');
+}
+
+// Row actions & selection
+E.resultsTableBody.addEventListener('click', ev => {
+  const btn = ev.target.closest('button');
+  if (btn) {
+    const action = btn.getAttribute('data-action');
+    const id = btn.getAttribute('data-id');
+    handleRowAction(action, id);
+    return;
+  }
+});
+
+E.resultsTableBody.addEventListener('change', ev => {
+  const cb = ev.target.closest('input.select-row');
+  if (cb) {
+    const id = cb.getAttribute('data-id');
+    const rec = DATA.find(d => d.id === id);
+    if (rec) {
+      rec.selected = !!cb.checked;
+      saveData();
+      updateSelectCount();
+    }
+  }
+});
+
+function handleRowAction(action, id) {
+  const rec = DATA.find(d => d.id === id);
+  if (!rec) return;
+  if (action === 'rescan') {
+    const det = detectVulnAndScore(rec.url, E.scenario.value || '');
+    rec.vuln = det.vuln; rec.score = det.score; rec.risk = det.risk; rec.timestamp = nowISO();
+    saveData(); renderTable();
+  } else if (action === 'note') {
+    const n = prompt('Add / Edit note:', rec.note || '');
+    if (n !== null) {
+      rec.note = n;
+      saveData(); renderTable();
+    }
+  } else if (action === 'delete') {
+    if (!confirm('Delete this entry?')) return;
+    DATA = DATA.filter(d => d.id !== id);
+    saveData(); renderTable();
+  }
+}
+
+// Bulk operations
+E.selectAll.addEventListener('click', () => {
+  DATA.forEach(d => d.selected = true);
+  saveData(); renderTable(); updateSelectCount();
+});
+E.deselectAll.addEventListener('click', () => {
+  DATA.forEach(d => d.selected = false);
+  saveData(); renderTable(); updateSelectCount();
+});
+E.bulkDelete.addEventListener('click', () => {
+  const ids = DATA.filter(d => d.selected).map(d => d.id);
+  if (ids.length === 0) {
+    alert('No entries selected');
+    return;
+  }
+  if (!confirm(`Delete ${ids.length} selected entries?`)) return;
+  DATA = DATA.filter(d => !ids.includes(d.id));
+  saveData(); renderTable();
+});
+
+// Update select count
+function updateSelectCount() {
+  E.selCount.textContent = String(DATA.filter(d => d.selected).length || 0);
+}
+
+// Import / Export
+E.importFile.addEventListener('change', ev => {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    parseCSVImport(e.target.result);
+    E.importFile.value = '';
+  };
+  reader.onerror = err => alert('Import read error');
+  reader.readAsText(f);
+});
+
+function parseCSVImport(text) {
+  if (!text) return;
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return;
+  const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const hasUrl = header.includes('url');
+  if (hasUrl) {
+    lines.slice(1).forEach(line => {
+      const parts = splitCSVLine(line);
+      const obj = {};
+      header.forEach((h,i) => obj[h] = parts[i] || '');
+      if (!obj.url) return;
+      if (DATA.find(d => d.url.toLowerCase() === obj.url.toLowerCase())) return;
+      const det = detectVulnAndScore(obj.url, E.scenario.value || '');
+      const rec = {
+        id: uid('imp'), url: obj.url,
+        vuln: obj.vuln || det.vuln,
+        score: det.score,
+        risk: obj.risk || det.risk,
+        timestamp: obj.timestamp || nowISO(),
+        note: obj.note || '',
+        selected: false,
+        batchId: null
+      };
+      DATA.push(rec);
+    });
+  } else {
+    lines.forEach(line => {
+      if (DATA.find(d => d.url.toLowerCase() === line.toLowerCase())) return;
+      const det = detectVulnAndScore(line, E.scenario.value || '');
+      DATA.push({ id: uid('imp'), url: line, vuln: det.vuln, score: det.score, risk: det.risk, timestamp: nowISO(), note:'', selected:false, batchId:null });
+    });
+  }
+  saveData(); renderTable();
+}
+
+function splitCSVLine(line) {
+  const res = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQ && line[i+1] === '"') {
+        cur += '"'; i++; continue;
+      }
+      inQ = !inQ; continue;
+    }
+    if (ch === ',' && !inQ) {
+      res.push(cur); cur = ''; continue;
+    }
+    cur += ch;
+  }
+  res.push(cur);
+  return res.map(s => s.trim());
+}
+
+E.exportCSV.addEventListener('click', () => {
+  if (DATA.length === 0) { alert('No data to export'); return; }
+  const headers = ['url','vuln','risk','timestamp','note'];
+  const rows = DATA.map(d => headers.map(h => `"${String(d[h] || '').replace(/"/g,'""')}"`).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  downloadBlob(csv, 'text/csv', `vapt_export_${(new Date()).toISOString().slice(0,10)}.csv`);
+});
+
+// PDF export using a simple library (like jsPDF) — placeholder
+E.exportPDF.addEventListener('click', () => {
+  alert('PDF export is not yet implemented — integrate jsPDF or a server-side PDF generator.');
+});
+
+function downloadBlob(content, type, filename) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// Scanning flow
+E.scanBtn.addEventListener('click', runScan);
+E.urlInput.addEventListener('keydown', ev => {
+  if (ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
+    ev.preventDefault();
+    runScan();
+  }
+});
+E.prefillBtn.addEventListener('click', () => {
+  E.urlInput.value = [
+    "https://example.com?id=1' OR '1'='1",
+    "https://testsite.com?q=<script>alert(1)",
+    "/admin.php?file=../../etc/passwd",
+    "http://127.0.0.1:5000?callback=http://evil.com",
+    "https://site.com/redirect?url=https://evil.com",
+    "http://template.com/{{7*7}}"
+  ].join(",\n");
+});
+E.clearBtn.addEventListener('click', () => {
+  if (!confirm('Clear all scan data?')) return;
+  DATA = [];
+  BATCHES = [];
+  saveData();
+  renderTable();
+});
+
+async function runScan() {
+  const raw = E.urlInput.value.trim();
+  if (!raw) {
+    alert('Enter URL(s)');
+    return;
+  }
+  const arr = raw.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+  for (const url of arr) {
+    await new Promise(r => setTimeout(r, 80 + Math.random()*120));
+    addUrlsFromInput(url, E.scenario.value || '');
+    renderTable();
+  }
+  E.urlInput.value = '';
+}
+
+// Sorting headers
+document.querySelectorAll('#resultsTable thead th').forEach(th => {
+  th.style.cursor = 'pointer';
+  th.addEventListener('click', () => {
+    const key = th.getAttribute('data-key') || 'url';
+    if (SORT.key === key) SORT.dir = SORT.dir === 'asc' ? 'desc' : 'asc';
+    else {
+      SORT.key = key; SORT.dir = 'asc';
+    }
+    renderTable();
+  });
+});
+
+// Filters / search
+E.filterRisk.addEventListener('change', renderTable);
+E.filterVuln.addEventListener('change', renderTable);
+E.search.addEventListener('input', renderTable);
+E.resetFilters.addEventListener('click', () => {
+  E.filterRisk.value = '';
+  E.filterVuln.value = '';
+  E.search.value = '';
+  renderTable();
+});
+
+// Init
+function init() {
+  loadData();
+  if (!Array.isArray(DATA)) DATA = [];
+  if (!Array.isArray(BATCHES)) BATCHES = [];
+  DATA.forEach(d => { if (typeof d.selected === 'undefined') d.selected = false; });
+  renderTable();
+  updateSelectCount();
+}
+init();
+</script>
+</body>
+</html>
