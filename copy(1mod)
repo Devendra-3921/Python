@@ -1,0 +1,1083 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SIH — URL VAPT Simulator (Professional)</title>
+
+<!-- Bootstrap CSS for layout -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Chart.js for charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  :root{
+    --bg:#071017; --panel:#0f1a23; --accent:#00d47a; --accent-2:#00aaff;
+    --muted:#9aa7b0; --high:#ff6b6b; --med:#ffb86b; --low:#7ef0b5;
+    --light-bg:#f6f8fb; --light-panel:#fff; --light-text:#111;
+    --radius:10px; --transition-time: 0.3s;
+  }
+  html,body {
+    height: 100%; margin: 0; padding: 0;
+    font-family: Inter, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg); color: #e6eef2;
+    transition: background var(--transition-time), color var(--transition-time);
+    scroll-behavior: smooth;
+  }
+  header {
+    background: linear-gradient(90deg,#062126,#0b2730);
+    padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  header .title {
+    color: var(--accent); font-size: 1.25rem; margin: 0;
+  }
+  .container-main {
+    max-width: 1200px; margin: 18px auto; padding: 12px;
+  }
+  .card-panel {
+    background: linear-gradient(180deg,var(--panel), #07151a);
+    border-radius: var(--radius);
+    padding: 12px;
+    border: 1px solid rgba(255,255,255,0.03);
+    margin-bottom: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    transition: background var(--transition-time);
+  }
+  .btn-accent {
+    background: var(--accent);
+    color: #062224;
+    border: 0;
+    transition: background var(--transition-time), color var(--transition-time);
+  }
+  .btn-accent:hover:not(:disabled) {
+    background: var(--accent-2);
+    color: #fff;
+  }
+  .btn-accent:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .small-muted {
+    color: var(--muted);
+  }
+  input, textarea, select {
+    border-radius: 8px;
+    transition: box-shadow 0.12s;
+    border: 1px solid var(--muted);
+    background-color: var(--panel);
+    color: inherit;
+  }
+  input:focus, textarea:focus, select:focus {
+    box-shadow: 0 0 8px rgba(0,212,122,0.3);
+    outline: none;
+    border-color: var(--accent);
+    background-color: var(--bg);
+  }
+  table thead th {
+    background: #071e26;
+    color: var(--accent);
+    user-select: none;
+  }
+  table tbody tr:hover {
+    background: rgba(0,255,120,0.06);
+    cursor: pointer;
+  }
+  .badge-high {
+    background: var(--high);
+    color: #fff;
+  }
+  .badge-med {
+    background: var(--med);
+    color: #111;
+  }
+  .badge-low {
+    background: var(--low);
+    color: #062224;
+  }
+  .nowrap {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .muted-small {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .tooltip-inline {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-left: 8px;
+  }
+  .col-actions {
+    min-width: 140px;
+  }
+  .editable-note {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    resize: none;
+    width: 100%;
+  }
+  .hidden {
+    display: none !important;
+  }
+  .controls-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .search-input {
+    min-width: 220px;
+    max-width: 420px;
+  }
+  .chip {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.03);
+    color: var(--muted);
+    margin: 4px;
+    font-size: 0.85rem;
+  }
+  /* Light mode */
+  body.light-mode {
+    background: var(--light-bg);
+    color: var(--light-text);
+  }
+  body.light-mode .card-panel {
+    background: var(--light-panel);
+    color: var(--light-text);
+  }
+  body.light-mode header {
+    background: linear-gradient(90deg,#e9f1ff,#eef8ff);
+  }
+  body.light-mode .btn-accent {
+    background: var(--light-panel);
+    color: var(--light-text);
+  }
+  /* Responsive */
+  @media (max-width:900px) {
+    .controls-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .col-actions {
+      min-width: 80px;
+    }
+    .table-wrap {
+      overflow: auto;
+    }
+  }
+  /* small helper styling */
+  .help {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+  }
+  .kicker {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .note {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+  /* charts container fixed heights */
+  .chart-box {
+    height: 240px;
+    position: relative;
+  }
+  /* button small icon */
+  .icon-btn {
+    padding: 6px 8px;
+    border-radius: 8px;
+  }
+  /* Button with subtle spinner animation */
+  .btn-spinner::after {
+    content: "";
+    display: inline-block;
+    margin-left: 8px;
+    width: 14px;
+    height: 14px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spinner 0.8s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spinner {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  /* Micro-interactions on buttons and table rows */
+  button.icon-btn:hover, button.icon-btn:focus {
+    background-color: rgba(255,255,255,0.1);
+    outline: none;
+  }
+  tbody tr:focus-within, tbody tr:hover {
+    background-color: rgba(0, 255, 120, 0.1);
+  }
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.25s ease;
+  }
+  a:hover,
+  a:focus {
+    color: var(--accent-2);
+    text-decoration: underline;
+    outline: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container-main d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="title" tabindex="0">SIH — URL VAPT Simulator (Pro)</h1>
+      <div class="small-muted" id="desc">Educational &amp; demo only — run locally</div>
+    </div>
+    <div class="d-flex align-items-center" style="gap:8px;">
+      <button id="themeToggle" class="btn btn-outline-light btn-sm" aria-pressed="false" aria-label="Toggle light or dark mode">
+        Toggle Theme
+      </button>
+      <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#ethicsModal" aria-haspopup="dialog" aria-controls="ethicsModal" aria-label="Show ethics information">
+        Ethics
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="container-main" role="main" aria-describedby="desc">
+
+  <!-- Controls / Inputs -->
+  <section class="card-panel" aria-labelledby="controls-heading">
+    <h2 id="controls-heading" class="kicker">Scan Controls</h2>
+    <div class="controls-row">
+      <textarea id="urlInput" rows="3" class="form-control" aria-describedby="controlsHelp" placeholder="Enter URLs (comma or newline separated). Example: https://example.com?id=1, /admin.php?file=../../etc/passwd"></textarea>
+
+      <select id="scenario" class="form-select" style="max-width:220px;" aria-label="Select scenario bias for scanning (optional)">
+        <option value="">Scenario Bias (optional)</option>
+        <option>SQLi heavy</option>
+        <option>XSS heavy</option>
+        <option>SSRF focused</option>
+        <option>Dir Traversal focused</option>
+        <option>RCE heavy</option>
+      </select>
+
+      <div class="d-flex gap-2" style="align-items:flex-start;">
+        <button id="scanBtn" class="btn btn-accent" aria-live="polite" aria-busy="false">Start Scan</button>
+        <button id="prefillBtn" class="btn btn-light">Prefill Demo</button>
+        <button id="clearBtn" class="btn btn-outline-light">Clear Data</button>
+
+        <div class="btn-group" role="group" aria-label="Export controls">
+          <button id="exportCSV" class="btn btn-outline-light">Export CSV</button>
+          <button id="exportJSON" class="btn btn-outline-light">Export JSON</button>
+        </div>
+
+        <label class="btn btn-outline-light mb-0" for="importFile">
+          Import CSV
+          <input id="importFile" type="file" accept=".csv" hidden aria-label="Import CSV file"/>
+        </label>
+      </div>
+    </div>
+
+    <div id="controlsHelp" class="d-flex gap-2 mt-2" style="align-items:center;flex-wrap:wrap;">
+      <div class="help">Tip: Use commas or new lines to add many URLs. Press <kbd>Ctrl/Cmd + Enter</kbd> to start scan.</div>
+      <div class="ms-auto">
+        <span id="statsChip" class="chip" aria-live="polite">Total: 0 • High: 0 • Medium: 0 • Low: 0</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filters -->
+  <section class="card-panel" aria-labelledby="filters-heading">
+    <h3 id="filters-heading" class="kicker">Filters &amp; Search</h3>
+    <div class="d-flex gap-2 align-items-center" style="flex-wrap:wrap;">
+      <select id="filterRisk" class="form-select form-select-sm" style="max-width:160px;" aria-label="Filter by risk level">
+        <option value="">All Risks</option><option>High</option><option>Medium</option><option>Low</option>
+      </select>
+
+      <select id="filterVuln" class="form-select form-select-sm" style="max-width:220px;" aria-label="Filter by attack types">
+        <option value="">All Attack Types</option>
+      </select>
+
+      <input id="search" class="form-control form-control-sm search-input" aria-label="Search URLs or notes" placeholder="Search URL or notes" autocomplete="off" spellcheck="false">
+
+      <button id="resetFilters" class="btn btn-outline-light btn-sm" aria-label="Reset all filters">Reset</button>
+
+      <div class="ms-auto help">Click on chart segments to filter</div>
+    </div>
+  </section>
+
+  <!-- Results + Charts -->
+  <section class="card-panel" aria-labelledby="results-heading">
+    <h3 id="results-heading" class="kicker">Results &amp; Visuals</h3>
+    <div class="row gy-3">
+      <div class="col-12 col-lg-7">
+        <div class="card-panel p-3" role="region" aria-label="Scan Results Table">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Scan Results</strong>
+            <div class="small-muted">Click headers to sort • per-row actions</div>
+          </div>
+          <div class="table-wrap" style="max-height:420px; overflow:auto;">
+            <table id="resultsTable" class="table table-sm table-dark align-middle mb-0" aria-describedby="results-heading" role="grid" tabindex="0">
+              <thead>
+                <tr>
+                  <th data-key="idx" class="nowrap" scope="col" tabindex="0" aria-sort="descending">#</th>
+                  <th data-key="url" scope="col" tabindex="0" aria-sort="none">URL</th>
+                  <th data-key="vuln" scope="col" tabindex="0" aria-sort="none">Attack Type</th>
+                  <th data-key="risk" scope="col" tabindex="0" aria-sort="none">Risk</th>
+                  <th data-key="timestamp" class="muted-small" scope="col" tabindex="0" aria-sort="none">When</th>
+                  <th class="col-actions" scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- row with extra controls -->
+        <div class="d-flex gap-2 mt-2">
+          <button id="selectAll" class="btn btn-outline-light btn-sm" aria-label="Select all entries">Select All</button>
+          <button id="deselectAll" class="btn btn-outline-light btn-sm" aria-label="Deselect all entries">Deselect</button>
+          <button id="bulkDelete" class="btn btn-danger btn-sm" aria-label="Delete selected entries">Delete Selected</button>
+          <div class="small-muted ms-auto">Selected <span id="selCount" aria-live="polite">0</span></div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-5">
+        <div class="card-panel chart-box mb-3" role="region" aria-label="Risk Distribution Chart">
+          <strong>Risk Distribution</strong>
+          <canvas id="riskChart" style="width:100%; height:100%" aria-describedby="RiskDistributionDesc"></canvas>
+          <p id="RiskDistributionDesc" class="sr-only">Donut chart showing distribution of risk categories detected</p>
+        </div>
+        <div class="card-panel chart-box" role="region" aria-label="Attack Types Chart">
+          <strong>Attack Types</strong>
+          <canvas id="typeChart" style="width:100%; height:100%" aria-describedby="AttackTypesDesc"></canvas>
+          <p id="AttackTypesDesc" class="sr-only">Bar chart showing frequency of each detected attack type</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer / meta -->
+  <footer>
+    <section class="card-panel small-muted" role="contentinfo">
+      <p><strong>Note:</strong> This simulator is for education only. Do not use on systems you do not own or have permission to test.</p>
+    </section>
+  </footer>
+</main>
+
+<!-- Ethics modal -->
+<div class="modal fade" id="ethicsModal" tabindex="-1" aria-labelledby="ethicsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 id="ethicsLabel" class="modal-title">Ethics &amp; Responsible Use</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>This tool is strictly educational. Never scan or attack systems without explicit permission.</p>
+        <ul>
+          <li>Use only in test/lab environments or with written permission.</li>
+          <li>Follow responsible disclosure for real findings.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-accent" data-bs-dismiss="modal">Understood</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap bundle (modals etc) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  /***********************************************
+   * URL VAPT Simulator - Professional v2
+   * Enhanced with latest web best practices
+   ***********************************************/
+
+  /* === Elements Cache === */
+  const E = {
+    urlInput: document.getElementById('urlInput'),
+    scenario: document.getElementById('scenario'),
+    scanBtn: document.getElementById('scanBtn'),
+    prefillBtn: document.getElementById('prefillBtn'),
+    clearBtn: document.getElementById('clearBtn'),
+    importFile: document.getElementById('importFile'),
+    exportCSV: document.getElementById('exportCSV'),
+    exportJSON: document.getElementById('exportJSON'),
+    filterRisk: document.getElementById('filterRisk'),
+    filterVuln: document.getElementById('filterVuln'),
+    search: document.getElementById('search'),
+    resetFilters: document.getElementById('resetFilters'),
+    resultsTableBody: document.querySelector('#resultsTable tbody'),
+    statsChip: document.getElementById('statsChip'),
+    selCount: document.getElementById('selCount'),
+    selectAll: document.getElementById('selectAll'),
+    deselectAll: document.getElementById('deselectAll'),
+    bulkDelete: document.getElementById('bulkDelete'),
+    themeToggle: document.getElementById('themeToggle')
+  };
+
+  const ctxRisk = document.getElementById('riskChart').getContext('2d');
+  const ctxType = document.getElementById('typeChart').getContext('2d');
+
+  let DATA = []; // stored entries: { id, url, vuln, risk, timestamp, note, selected }
+  let FILTERED = []; // derived
+  let SORT = { key: 'timestamp', dir: 'desc' };
+  let RISK_CHART = null, TYPE_CHART = null;
+
+  const LS_KEY = 'sih_vapt_pro_v2';
+  const LS_THEME = 'sih_theme_vapt_v2';
+
+  /* === Utility Functions === */
+  function uid(prefix='id'){ return prefix + '_' + Math.random().toString(36).slice(2,10); }
+  function nowISO(){ return new Date().toISOString(); }
+  function fmtDate(iso){ try { return new Date(iso).toLocaleString(); } catch(e){ return iso; } }
+  function escapeHtml(s) {
+    if(!s) return '';
+    return String(s).replace(/[&<>"']/g, 
+      ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  }
+  function clamp(n,min,max){ return Math.max(min,Math.min(max,n)); }
+
+  /* Safe parse boolean-ish */
+  function truthy(v){ return v===true || v==='true' || v===1 || v==='1'; }
+
+  /* LocalStorage save/load with guards */
+  function saveData(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(DATA)); } catch(e){ console.warn('save error', e); }}
+  function loadData(){ try{ const raw = localStorage.getItem(LS_KEY); if(raw) DATA = JSON.parse(raw) || []; } catch(e){ console.warn('load error', e); DATA = []; }}
+
+  /* Theme handling */
+  function applyTheme(){
+    const t = localStorage.getItem(LS_THEME) || 'dark';
+    if(t==='light'){
+      document.body.classList.add('light-mode');
+      E.themeToggle.setAttribute('aria-pressed', 'true');
+    } else {
+      document.body.classList.remove('light-mode');
+      E.themeToggle.setAttribute('aria-pressed', 'false');
+    }
+  }
+  applyTheme();
+  E.themeToggle.addEventListener('click', ()=>{
+    document.body.classList.toggle('light-mode');
+    const active = document.body.classList.contains('light-mode');
+    localStorage.setItem(LS_THEME, active ? 'light' : 'dark');
+    E.themeToggle.setAttribute('aria-pressed', active.toString());
+  });
+
+  /* Debounce function */
+  function debounce(fn, ms) {
+    let timer = null;
+    return function(...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn.apply(this, args), ms);
+    };
+  }
+
+  /* ===========================
+     Vulnerability Detection Engine
+  =========================== */
+  function detectVulnAndScore(url, scenario='') {
+    if(!url || typeof url !== 'string') return { vuln: 'Unknown', score: 0, details: [] };
+    const u = url.toLowerCase();
+    const scores = {
+      'SQL Injection': 0, 'XSS': 0, 'SSRF': 0, 'Directory Traversal': 0, 'RCE': 0,
+      'LFI': 0, 'RFI': 0, 'Open Redirect': 0, 'Command Injection': 0,
+      'IDOR': 0, 'XXE': 0, 'LDAP Injection': 0, 'Template Injection': 0,
+      'Host Header Injection': 0, 'HPP': 0, 'CRLF Injection': 0, 'CSRF': 0,
+      'Unknown': 0
+    };
+    const details = [];
+    const scenarioBias = {
+      'SQLi heavy': {'SQL Injection': 2},
+      'XSS heavy': {'XSS': 2},
+      'SSRF focused': {'SSRF': 2},
+      'Dir Traversal focused': {'Directory Traversal': 2},
+      'RCE heavy': {'RCE': 2}
+    };
+    if(scenario && scenarioBias[scenario]) {
+      Object.keys(scenarioBias[scenario]).forEach(k => scores[k] += scenarioBias[scenario][k]);
+    }
+
+    // Heuristic Pattern Checks
+    if(/(\%27)|(\')|(\-\-)|(\%3D)|(\bunion\b)|(\bselect\b|\binsert\b|\bdelete\b|\bdrop\b|\bupdate\b)|(\bexec\b|\bexec\()|(\bor\b\s+1=1)/i.test(u)){scores['SQL Injection'] += 3; details.push('SQLi pattern');}
+    if(/(\bor\b|\band\b)\s+\d+=\d+/i.test(u)){scores['SQL Injection'] += 2; details.push('Boolean-based SQLi');}
+    if(/<script\b|%3cscript|onerror=|onload=|javascript:/i.test(u)){scores['XSS'] += 3; details.push('XSS script/event');}
+    if(/&lt;script|%3C|%3E|&#x3C;|&#x3E;/i.test(u)){scores['XSS'] += 1; details.push('Encoded script');}
+    if(/127\.0\.0\.1|localhost|169\.254\.169\.254|file:\/\//i.test(u)){scores['SSRF'] += 3; details.push('Internal host SSRF');}
+    if(/redirect=|url=|next=|dest=|callback=/i.test(u)){scores['SSRF'] += 1; details.push('Redirect SSRF');}
+    if(/(\.\.\/)|(%2e%2e\/)|(%2e%2e%5c)/i.test(u)){scores['Directory Traversal'] += 3; details.push('Directory Traversal');}
+    if(/etc\/passwd|boot\.ini|windows\\system32/i.test(u)){scores['LFI'] += 3; details.push('Sensitive file LFI');}
+    if(/(\$\(.*\))|(`.*`)|(;.*\b(cat|curl|wget|nc|bash|sh|python)\b)|(\|.*\b)/i.test(u)){scores['Command Injection'] += 3; scores['RCE'] += 2; details.push('Command Injection/RCE pattern');}
+    if(/https?:\/\/.*\.(php|txt|asp|jsp|py)(\?|$)/i.test(u) && /include|require|file_get_contents|fopen|curl_exec/i.test(u)){scores['RFI'] += 2; details.push('RFI pattern');}
+    if(/[?&](redirect|url|next|dest|goto|destination)=https?:\/\//i.test(u)){scores['Open Redirect'] += 2; details.push('Open Redirect param');}
+    if(/[?&]id=\d+/i.test(u) && !/select|join|where/i.test(u)){scores['IDOR'] += 1; details.push('IDOR param');}
+    if(/<!DOCTYPE\s+ENTITY|<!ENTITY|%3C!ENTITY%3E|%3C\?xml/i.test(u)) {scores['XXE'] += 2; details.push('XXE pattern');}
+    if(/\(|\)|=\*|ldap(s)?:\/\//i.test(u)){scores['LDAP Injection'] += 1; details.push('LDAP pattern');}
+    if(/{{.*}}|%7B%7B.*%7D%7D|Jinja2|Twig|Handlebars|EJS|{{\s*config\./i.test(u)){scores['Template Injection'] += 2; details.push('Template Injection');}
+    if(/host=|x-forwarded-host=|x-forwarded-proto=/i.test(u)){scores['Host Header Injection'] += 1; details.push('Host header injection');}
+    if(hasDuplicateParams(url)){scores['HPP'] += 2; details.push('HTTP Parameter Pollution');}
+    if(/%0d%0a|%0a%0d|\r\n|\n\r/.test(u)){scores['CRLF Injection'] += 2; details.push('CRLF Injection');}
+    if(/csrf_token|authenticity_token|_csrf|csrfmiddlewaretoken/i.test(u)){scores['CSRF'] += 1; details.push('CSRF token');}
+    if(/(\(|\)|<|>|%3c|%3e|%27|%22|eval\(|system\(|passthru\(|exec\(|shell_exec\(|popen\()/i.test(u)){
+      scores['RCE'] += 1; scores['Command Injection'] += 1; scores['XSS'] += 1; details.push('Generic suspicious pattern');
+    }
+
+    const entries = Object.entries(scores).sort((a,b) => b[1] - a[1]);
+    let top = entries[0];
+    if(top[1] === 0){
+      const found = entries.find(e => e[1] > 0);
+      if(found) top = found;
+    }
+    let vulnName = top[0];
+    const score = top[1];
+    if(score === 0) vulnName = 'Unknown';
+
+    let risk = 'Low';
+    if(score >= 6) risk = 'High';
+    else if(score >= 3) risk = 'Medium';
+    else if(score >= 1) risk = 'Low';
+
+    return { vuln: vulnName, score: score, risk: risk, details: details };
+  }
+
+  function hasDuplicateParams(urlStr){
+    try{
+      const tmp = new URL(urlStr, 'http://example.invalid');
+      const names = [];
+      for(const [k] of tmp.searchParams) names.push(k);
+      return new Set(names).size !== names.length;
+    } catch(e){
+      const q = (urlStr.split('?')[1] || '').split('#')[0];
+      if(!q) return false;
+      const parts = q.split('&').map(p => p.split('=')[0]);
+      return new Set(parts).size !== parts.length;
+    }
+  }
+
+  /* === Data Add & Render === */
+  function addUrlsFromInput(inputText, scenarioBias=''){
+    if(!inputText || typeof inputText !== 'string') return [];
+    const candidates = inputText.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+    const added = [];
+    candidates.forEach(c => {
+      if(DATA.find(d=>d.url.toLowerCase() === c.toLowerCase())) return;
+      const det = detectVulnAndScore(c, scenarioBias);
+      const rec = {
+        id: uid('entry'),
+        url: c,
+        vuln: det.vuln,
+        score: det.score,
+        risk: det.risk,
+        details: det.details,
+        timestamp: nowISO(),
+        note: '',
+        selected: false
+      };
+      DATA.push(rec);
+      added.push(rec);
+    });
+    if(added.length) saveData();
+    return added;
+  }
+
+  function renderTable(){
+    const rf = E.filterRisk.value;
+    const vf = E.filterVuln.value;
+    const q = (E.search.value || '').toLowerCase().trim();
+
+    FILTERED = DATA.filter(d => {
+      if(rf && d.risk !== rf) return false;
+      if(vf && d.vuln !== vf) return false;
+      if(q){
+        return (d.url && d.url.toLowerCase().includes(q)) || 
+               (d.note && d.note.toLowerCase().includes(q)) ||
+               (d.details && d.details.join(' ').toLowerCase().includes(q));
+      }
+      return true;
+    });
+
+    const k = SORT.key;
+    const dir = SORT.dir === 'asc' ? 1 : -1;
+    FILTERED.sort((a,b) => {
+      let va = k === 'timestamp' ? a.timestamp : (k === 'idx' ? DATA.indexOf(a) : a[k] || '');
+      let vb = k === 'timestamp' ? b.timestamp : (k === 'idx' ? DATA.indexOf(b) : b[k] || '');
+      if(k === 'score'){
+        // numeric sort for score
+        return dir * (va - vb);
+      }
+      return dir * String(va).localeCompare(String(vb));
+    });
+
+    E.resultsTableBody.innerHTML = '';
+    
+    FILTERED.forEach((d,i) => {
+      const tr = document.createElement('tr');
+      tr.dataset.id = d.id;
+      const when = fmtDate(d.timestamp);
+
+      const urlSafeText = escapeHtml(d.url);
+      // Show clickable URL if likely URL
+      const urlContent = isLikelyUrl(d.url) ? 
+        `<a href="${urlSafeText}" target="_blank" rel="noopener noreferrer">${urlSafeText}</a>` : urlSafeText;
+
+      // ARIA sort attributes update
+      document.querySelectorAll('#resultsTable thead th').forEach(th => {
+        const key = th.getAttribute('data-key');
+        if(key === SORT.key){
+          th.setAttribute('aria-sort', SORT.dir === 'asc' ? 'ascending' : 'descending');
+        } else {
+          th.setAttribute('aria-sort', 'none');
+        }
+      });
+
+      tr.innerHTML = `
+      <td class="nowrap text-muted small">${i + 1}</td>
+      <td style="min-width:220px; max-width:520px;" title="${urlSafeText}">${urlContent}</td>
+      <td class="nowrap">${escapeHtml(d.vuln)}</td>
+      <td class="nowrap">
+        <span class="${d.risk === 'High' ? 'badge-high' : d.risk === 'Medium' ? 'badge-med' : 'badge-low'}" 
+              style="padding:6px 8px; border-radius:6px;" aria-label="Risk level: ${d.risk}">
+          ${escapeHtml(d.risk)}
+        </span>
+      </td>
+      <td class="muted-small nowrap">${escapeHtml(when)}</td>
+      <td>
+        <div class="d-flex gap-1" role="group" aria-label="Row actions">
+          <input type="checkbox" class="select-row" data-id="${d.id}" ${d.selected ? 'checked' : ''} aria-label="Select this entry">
+          <button class="btn btn-sm btn-outline-light icon-btn" data-action="rescan" data-id="${d.id}" title="Rescan this URL" aria-label="Rescan vulnerability detection">&#x21bb;</button>
+          <button class="btn btn-sm btn-outline-light icon-btn" data-action="note" data-id="${d.id}" title="Add or edit note" aria-label="Add or edit note">&#x1F4DD;</button>
+          <button class="btn btn-sm btn-danger icon-btn" data-action="delete" data-id="${d.id}" title="Delete this entry" aria-label="Delete this entry">&times;</button>
+        </div>
+      </td>`;
+      
+      E.resultsTableBody.appendChild(tr);
+    });
+
+    updateStatsUI();
+    updateCharts();
+    populateVulnFilterIfNeeded();
+  }
+
+  /* === Chart Updates === */
+  function updateCharts() {
+    const riskCounts = { High: 0, Medium: 0, Low: 0 };
+    const typeCounts = {};
+    DATA.forEach(d => {
+      riskCounts[d.risk] = (riskCounts[d.risk] || 0) + 1;
+      typeCounts[d.vuln] = (typeCounts[d.vuln] || 0) + 1;
+    });
+
+    // Risk Chart
+    try{
+      if(RISK_CHART) RISK_CHART.destroy();
+      RISK_CHART = new Chart(ctxRisk, {
+        type:'doughnut',
+        data: {
+          labels: ['High', 'Medium', 'Low'],
+          datasets: [{
+            data: [riskCounts.High, riskCounts.Medium, riskCounts.Low],
+            backgroundColor: ['#ff6b6b', '#ffb86b', '#7ef0b5']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' }},
+          onClick: (e, items) => {
+            if(items.length){
+              const label = RISK_CHART.data.labels[items[0].index];
+              E.filterRisk.value = label;
+              renderTable();
+            }
+          }
+        }
+      });
+    }catch(e){console.warn('Risk chart error', e);}
+
+    // Type Chart
+    try{
+      const labels = Object.keys(typeCounts).filter(k => k && typeCounts[k] > 0);
+      const values = labels.map(l => typeCounts[l]);
+      if(TYPE_CHART) TYPE_CHART.destroy();
+      TYPE_CHART = new Chart(ctxType, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Occurrences',
+            data: values,
+            backgroundColor: '#00d47a'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }},
+          onClick: (e, items) => {
+            if(items.length){
+              const idx = items[0].index;
+              E.filterVuln.value = labels[idx] || '';
+              renderTable();
+            }
+          },
+          scales: {
+            y: { beginAtZero: true, precision: 0 }
+          }
+        }
+      });
+    }catch(e){console.warn('Type chart error', e);}
+  }
+
+  /* === Filter Population === */
+  let vulnFilterCached = new Set();
+  function populateVulnFilterIfNeeded(){
+    const s = new Set(DATA.map(d => d.vuln).filter(Boolean));
+    const key = JSON.stringify(Array.from(s).sort());
+    if(key === JSON.stringify(Array.from(vulnFilterCached).sort())) return;
+    vulnFilterCached = s;
+    const opts = ['<option value="">All Attack Types</option>'];
+    Array.from(s).sort().forEach(v => opts.push(`<option>${escapeHtml(v)}</option>`));
+    E.filterVuln.innerHTML = opts.join('');
+  }
+
+  /* === Update Stats === */
+  function updateStatsUI(){
+    const total = DATA.length;
+    const high = DATA.filter(d => d.risk === 'High').length;
+    const med = DATA.filter(d => d.risk === 'Medium').length;
+    const low = DATA.filter(d => d.risk === 'Low').length;
+    E.statsChip.textContent = `Total: ${total} • High: ${high} • Medium: ${med} • Low: ${low}`;
+  }
+
+  /* === Row Actions === */
+  E.resultsTableBody.addEventListener('click', ev => {
+    const btn = ev.target.closest('button');
+    if(btn){
+      const action = btn.getAttribute('data-action');
+      const id = btn.getAttribute('data-id');
+      handleRowAction(action, id);
+      return;
+    }
+    const checkbox = ev.target.closest('input.select-row');
+    if(checkbox){
+      const id = checkbox.getAttribute('data-id');
+      const rec = DATA.find(d => d.id === id);
+      if(rec) {
+        rec.selected = !!checkbox.checked;
+        updateSelectCount();
+        saveData();
+      }
+    }
+  });
+
+  function handleRowAction(action, id){
+    const rec = DATA.find(d => d.id === id);
+    if(!rec) return;
+    if(action === 'rescan'){
+      const det = detectVulnAndScore(rec.url, E.scenario.value || '');
+      rec.vuln = det.vuln;
+      rec.score = det.score;
+      rec.risk = det.risk;
+      rec.details = det.details;
+      rec.timestamp = nowISO();
+      saveData(); renderTable();
+    } else if(action === 'note'){
+      const newNote = prompt('Add or update note (stored locally, not sent anywhere):', rec.note || '');
+      if(newNote !== null) {
+        rec.note = newNote;
+        saveData();
+        renderTable();
+      }
+    } else if(action === 'delete'){
+      if(!confirm('Delete this entry? This action cannot be undone.')) return;
+      DATA = DATA.filter(d => d.id !== id);
+      saveData();
+      renderTable();
+    }
+  }
+
+  /* === Bulk actions === */
+  E.selectAll.addEventListener('click', () => {
+    DATA.forEach(d => d.selected = true);
+    updateSelectCount();
+    renderTable();
+    saveData();
+  });
+  E.deselectAll.addEventListener('click', () => {
+    DATA.forEach(d => d.selected = false);
+    updateSelectCount();
+    renderTable();
+    saveData();
+  });
+  E.bulkDelete.addEventListener('click', () => {
+    if(DATA.filter(d => d.selected).length === 0){
+      alert('No entries selected.');
+      return;
+    }
+    if(confirm('Delete selected entries? This action cannot be undone.')){
+      DATA = DATA.filter(d => !d.selected);
+      updateSelectCount();
+      renderTable();
+      saveData();
+    }
+  });
+
+  /* === Update selected count === */
+  function updateSelectCount(){
+    const c = DATA.filter(d => d.selected).length;
+    E.selCount.textContent = String(c);
+  }
+
+  /* === Import/Export === */
+  E.importFile.addEventListener('change', ev => {
+    const file = ev.target.files && ev.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      parseCSVImport(e.target.result);
+      E.importFile.value = '';
+    };
+    reader.onerror = err => {
+      alert('Error reading file.');
+      console.warn(err);
+    };
+    reader.readAsText(file);
+  });
+
+  function parseCSVImport(text){
+    if(!text) return;
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if(lines.length === 0) return;
+    const hdr = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const hasUrl = hdr.includes('url');
+    if(hasUrl){
+      for(let i=1;i<lines.length;i++){
+        const parts = splitCSVLine(lines[i]);
+        const obj = {};
+        hdr.forEach((h,idx) => obj[h] = parts[idx] || '');
+        if(!obj.url) continue;
+        if(DATA.find(d => d.url.toLowerCase() === obj.url.toLowerCase())) continue;
+        const det = detectVulnAndScore(obj.url, E.scenario.value || '');
+        const rec = {
+          id: uid('imp'),
+          url: obj.url,
+          vuln: obj.vuln || det.vuln,
+          score: det.score,
+          risk: obj.risk || det.risk,
+          details: det.details,
+          timestamp: obj.timestamp || nowISO(),
+          note: obj.note || '',
+          selected: false
+        };
+        DATA.push(rec);
+      }
+    } else {
+      lines.forEach(line => {
+        if(DATA.find(d => d.url.toLowerCase() === line.toLowerCase())) return;
+        const det = detectVulnAndScore(line, E.scenario.value || '');
+        DATA.push({
+          id: uid('imp'),
+          url: line,
+          vuln: det.vuln,
+          score: det.score,
+          risk: det.risk,
+          details: det.details,
+          timestamp: nowISO(),
+          note: '',
+          selected: false
+        });
+      });
+    }
+    saveData();
+    renderTable();
+  }
+
+  function splitCSVLine(line){
+    const res = [];
+    let cur = '';
+    let inQuotes = false;
+    for(let i=0;i<line.length;i++){
+      const ch = line[i];
+      if(ch === '"'){
+        if(inQuotes && line[i+1] === '"'){
+          cur += '"'; i++; continue;
+        }
+        inQuotes = !inQuotes; continue;
+      }
+      if(ch === ',' && !inQuotes){
+        res.push(cur);
+        cur = '';
+        continue;
+      }
+      cur += ch;
+    }
+    res.push(cur);
+    return res.map(s => s.trim());
+  }
+
+  E.exportCSV.addEventListener('click', ()=> {
+    if(DATA.length === 0){
+      alert('No data to export.');
+      return;
+    }
+    const headers = ['url','vuln','risk','timestamp','note'];
+    const rows = DATA.map(d => headers.map(h => `"${String(d[h] || '').replace(/"/g,'""')}"`).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    downloadBlob(csv, 'text/csv', `url_vapt_export_${(new Date()).toISOString().slice(0,10)}.csv`);
+  });
+
+  E.exportJSON.addEventListener('click', ()=> {
+    if(DATA.length === 0){
+      alert('No data to export.');
+      return;
+    }
+    const json = JSON.stringify(DATA, null, 2);
+    downloadBlob(json, 'application/json', `url_vapt_export_${(new Date()).toISOString().slice(0,10)}.json`);
+  });
+
+  function downloadBlob(content, type, filename){
+    const blob = new Blob([content], { type });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  /* === Validation & Utility Features === */
+  function isLikelyUrl(s){
+    if(!s || typeof s !== 'string') return false;
+    const t = s.trim();
+    const pattern = /^(https?:\/\/)?([a-z0-9\-_]+\.)+[a-z]{2,}(:\d+)?(\/.*)?$/i;
+    if(t.startsWith('/') || pattern.test(t)) return true;
+    if(/^\d{1,3}(\.\d{1,3}){3}(:\d+)?(\/.*)?$/.test(t)) return true;
+    if(/%27|%3C|<script|<|>|\.\.\//i.test(t)) return true;
+    return false;
+  }
+
+  /* === Scanning & Async Flow === */
+  E.scanBtn.addEventListener('click', runScan);
+  E.urlInput.addEventListener('keydown', (ev) => {
+    if(ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)) {
+      ev.preventDefault();
+      runScan();
+    }
+  });
+
+  E.prefillBtn.addEventListener('click', () => {
+    E.urlInput.value = [
+      "https://example.com?id=1' OR '1'='1",
+      "https://testsite.local/search?q=<script>alert(1)",
+      "/admin.php?file=../../etc/passwd",
+      "http://127.0.0.1:5000/endpoint?callback=http://attacker.example/collect",
+      "https://vuln.site/redirect?url=https://evil.example.com",
+      "https://app.example.com/template/{{7*7}}",
+      "http://example.com/?id=100",
+      "https://xml.example.com/?payload=%3C?xml%20version%3D%221.0%22%3E%3C!ENTITY%20xxe%20SYSTEM%20%22file:///etc/passwd%22%3E"
+    ].join(",\n");
+  });
+
+  E.clearBtn.addEventListener('click', () => {
+    if(!confirm('Clear ALL stored scan results? This cannot be undone.')) return;
+    DATA = [];
+    saveData();
+    renderTable();
+  });
+
+  async function runScan(){
+    const input = E.urlInput.value.trim();
+    if(!input){
+      alert('Please enter one or more URLs');
+      return;
+    }
+    const items = input.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+    if(items.length === 0){
+      alert('No valid items');
+      return;
+    }
+    setScanBusy(true);
+    for(let i=0;i<items.length;i++){
+      const u = items[i];
+      await sleep(50 + Math.random()*150);
+      addUrlsFromInput(u, E.scenario.value || '');
+      renderTable();
+    }
+    E.urlInput.value = '';
+    setScanBusy(false);
+  }
+
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  function setScanBusy(busy){
+    if(busy){
+      E.scanBtn.disabled = true;
+      E.scanBtn.classList.add('btn-spinner');
+      E.scanBtn.setAttribute('aria-busy','true');
+      E.scanBtn.textContent = 'Scanning...';
+    } else {
+      E.scanBtn.disabled = false;
+      E.scanBtn.classList.remove('btn-spinner');
+      E.scanBtn.setAttribute('aria-busy','false');
+      E.scanBtn.textContent = 'Start Scan';
+    }
+  }
+
+  /* === Sorting Headers === */
+  document.querySelectorAll('#resultsTable thead th').forEach(th=>{
+    th.addEventListener('click', ()=>{
+      const key = th.getAttribute('data-key') || 'url';
+      if(SORT.key === key) SORT.dir = SORT.dir === 'asc' ? 'desc' : 'asc';
+      else {
+        SORT.key = key;
+        SORT.dir = 'asc';
+      }
+      renderTable();
+    });
+  });
+
+  /* === Filters and Search === */
+  E.filterRisk.addEventListener('change', renderTable);
+  E.filterVuln.addEventListener('change', renderTable);
+  E.search.addEventListener('input', debounce(() => renderTable(), 300));
+
+  E.resetFilters.addEventListener('click', () => {
+    E.filterRisk.value = '';
+    E.filterVuln.value = '';
+    E.search.value = '';
+    renderTable();
+  });
+
+  /* === UI Selection Count Update === */
+  document.addEventListener('click', () => updateSelectCount());
+
+  /* === Initialization === */
+  function initApp(){
+    loadData();
+    DATA.forEach(d => {
+      if(typeof d.selected === 'undefined') d.selected = false;
+    });
+    renderTable();
+    updateSelectCount();
+  }
+  initApp();
+
+</script>
+
+</body>
+</html>
